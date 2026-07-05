@@ -4,10 +4,8 @@ import plotly.express as px
 import requests
 import numpy as np
 
-# Konfiguracja strony
 st.set_page_config(page_title="Dashboard Pogodowy", layout="wide", page_icon="🌤️")
 
-# Nagłówek aplikacji
 st.title("🌤️ Analiza Pogody w Polskich Miastach (2023)")
 st.markdown("""
 <style>
@@ -60,7 +58,6 @@ def clean_data(df):
     df['Średnia_Temp_C'] = df['Średnia_Temp_C'].fillna(df['Średnia_Temp_C'].median())
     df['Suma_Opadów_mm'] = df['Suma_Opadów_mm'].fillna(0.0)
 
-    # Mapowanie numerów miesięcy na polskie nazwy
     miesiace = {
         1: 'Styczeń', 2: 'Luty', 3: 'Marzec', 4: 'Kwiecień',
         5: 'Maj', 6: 'Czerwiec', 7: 'Lipiec', 8: 'Sierpień',
@@ -77,10 +74,8 @@ raw_data = load_weather_data()
 df = clean_data(raw_data)
 
 # --- 3. WIDGETY I FILTRY (SIDEBAR) ---
-# --- 3. WIDGETY I FILTRY (SIDEBAR) ---
 st.sidebar.header("⚙️ Ustawienia filtrów")
 
-# 1. Kalendarz na samej górze (żeby miał miejsce rozwinąć się w dół)
 min_date = df['Data'].min().date()
 max_date = df['Data'].max().date()
 date_range = st.sidebar.date_input(
@@ -90,31 +85,26 @@ date_range = st.sidebar.date_input(
     max_value=max_date
 )
 
-# 2. Wybór miast (Multiselect)
 selected_cities = st.sidebar.multiselect(
     "📍 Wybierz miasta:",
     options=df['Miasto'].unique(),
     default=["Warszawa", "Kraków", "Gdańsk"]
 )
 
-# 3. Zmieniony trzeci widget (Selectbox zamiast bezsensownego slidera)
 weather_type = st.sidebar.selectbox(
     "🌤️ Rodzaj pogody:",
     options=["Wszystkie dni", "Tylko deszczowe (🌧️)", "Tylko suche (☀️)"]
 )
 
-# Aplikacja filtrów na DataFrame
 if len(date_range) == 2:
     start_date, end_date = date_range
 
-    # Krok 1: Filtrowanie po datach i miastach
     filtered_df = df[
         (df['Miasto'].isin(selected_cities)) &
         (df['Data'].dt.date >= start_date) &
         (df['Data'].dt.date <= end_date)
         ]
 
-    # Krok 2: Filtrowanie po rodzaju pogody
     if weather_type == "Tylko deszczowe (🌧️)":
         filtered_df = filtered_df[filtered_df['Suma_Opadów_mm'] > 0]
     elif weather_type == "Tylko suche (☀️)":
@@ -123,11 +113,9 @@ if len(date_range) == 2:
 else:
     filtered_df = df.copy()
 
-# Zabezpieczenie przed pustym DataFrame
 if filtered_df.empty:
     st.warning("⚠️ Brak danych dla wybranych filtrów. Zmień parametry w panelu bocznym.")
     st.stop()
-# --- 4. KPI (METRYKI) ---
 st.subheader("📊 Podsumowanie statystyk")
 col1, col2, col3 = st.columns(3)
 
@@ -154,14 +142,12 @@ with tab1:
         filtered_df, x="Data", y="Średnia_Temp_C", color="Miasto",
         labels={"Średnia_Temp_C": "Średnia Temp. (°C)", "Data": "Data pomiaru"}
     )
-    # Ładniejszy hover dla wykresu liniowego
     fig_line.update_traces(mode="lines",
                            hovertemplate="<b>%{fullData.name}</b><br>Data: %{x}<br>Temperatura: %{y:.1f} °C<extra></extra>")
     fig_line.update_layout(hovermode="x unified", legend_title_text="Miasto")
     st.plotly_chart(fig_line, use_container_width=True)
 
     st.subheader("Suma opadów według miesięcy")
-    # Grupowanie (wymaga sortowania, żeby miesiące nie pomieszały się alfabetycznie)
     monthly_rain = filtered_df.groupby(['Miesiąc_Liczba', 'Miesiąc', 'Miasto'])['Suma_Opadów_mm'].sum().reset_index()
     monthly_rain = monthly_rain.sort_values(by="Miesiąc_Liczba")
 
@@ -170,7 +156,6 @@ with tab1:
         barmode="group",
         labels={"Suma_Opadów_mm": "Suma opadów (mm)", "Miesiąc": "Miesiąc"}
     )
-    # Ładniejszy hover dla wykresu słupkowego (rozwiązuje problem ze zdjęcia!)
     fig_bar.update_traces(hovertemplate="<b>%{fullData.name}</b><br>Miesiąc: %{x}<br>Opad: %{y:.1f} mm<extra></extra>")
     fig_bar.update_layout(legend_title_text="Miasto", xaxis_title="")
     st.plotly_chart(fig_bar, use_container_width=True)
@@ -182,7 +167,6 @@ with tab2:
         color="Typ_Dnia", hover_data={"Data": True, "Miasto": True, "Typ_Dnia": False},
         labels={"Średnia_Temp_C": "Temperatura (°C)", "Max_Wiatr_kmh": "Max Wiatr (km/h)", "Typ_Dnia": "Rodzaj pogody"}
     )
-    # Formatowanie dymka
     fig_scatter.update_traces(
         hovertemplate="<b>%{customdata[1]}</b><br>Data: %{customdata[0]|%Y-%m-%d}<br>Temp: %{x:.1f} °C<br>Wiatr: %{y:.1f} km/h<extra></extra>")
     fig_scatter.update_layout(legend_title_text="Pogoda")
@@ -203,6 +187,5 @@ with tab3:
     map_data = filtered_df[['Szerokość', 'Długość', 'Miasto']].drop_duplicates()
     map_data = map_data.rename(columns={"Szerokość": "lat", "Długość": "lon"})
 
-    # Dodajemy proste markery na mapie z podpisami miast
     st.map(map_data, size=5000, color="#0044ff")
     st.caption("Powyższa mapa wskazuje współrzędne stacji pomiarowych dla wybranych miast.")
