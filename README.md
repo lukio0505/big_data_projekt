@@ -12,3 +12,4 @@ Aplikacja pobiera rzeczywiste, historyczne dane z darmowego API Open-Meteo, czy�
 `streamlit run app.py`
 
 **Link do działającej aplikacji:**
+https://bigdataprojekt-6hzink3xp8n2ghod99yb7g.streamlit.app/
